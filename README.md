@@ -45,3 +45,9 @@ paver celery
 # Or optionally, in the lms shell, start the worker manually
 # DJANGO_SETTINGS_MODULE=lms.envs.devstack_with_worker celery worker --beat --app=lms.celery:APP -Q edx.core.default
 ```
+
+## Run tests manually
+
+```
+PYTHONPATH=$(pwd) DJANGO_SETTINGS_MODULE=test_settings django-admin test
+```
