@@ -11,6 +11,7 @@ wrapper, we need to fake an HTTP request manually. To determine the user for
 `request.user` we use the user who created the periodic report schedule.
 """
 
+import hashlib
 from datetime import date
 from importlib import import_module
 from typing import Tuple, Callable
@@ -99,16 +100,24 @@ def periodic_task_wrapper(periodic_task_schedule_id: int) -> None:
         if schedule.task.requires_request:
             task_call_args.insert(0, create_fake_request(schedule.owner))
 
-        if schedule.upload_folder_structure == PeriodicReportSchedule.STRUCTURE_BY_DATE:
+        if schedule.upload_folder_structure == PeriodicReportSchedule.STRUCTURE_FLAT:
+            task_call_kwargs.update({
+                "upload_parent_dir": schedule.upload_folder_prefix,
+            })
+        elif schedule.upload_folder_structure == PeriodicReportSchedule.STRUCTURE_REGULAR:
+            hashed_course_id = hashlib.sha1(str(course_id).encode('utf-8')).hexdigest()
             task_call_kwargs.update({
                 "upload_parent_dir": "{directory_prefix}{directory_name}".format(
                     directory_prefix=schedule.upload_folder_prefix,
-                    directory_name=date.today().strftime("%Y/%m/%d")
+                    directory_name=hashed_course_id,
                 )
             })
-        elif schedule.upload_folder_structure == PeriodicReportSchedule.STRUCTURE_REGULAR:
+        elif schedule.upload_folder_structure == PeriodicReportSchedule.STRUCTURE_BY_DATE:
             task_call_kwargs.update({
-                "upload_parent_dir": schedule.upload_folder_prefix,
+                "upload_parent_dir": "{directory_prefix}{directory_name}".format(
+                    directory_prefix=schedule.upload_folder_prefix,
+                    directory_name=date.today().strftime("%Y/%m/%d"),
+                )
             })
 
         report_task(*task_call_args, **task_call_kwargs)

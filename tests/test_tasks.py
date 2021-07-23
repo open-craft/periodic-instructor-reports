@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 
 from unittest import TestCase
@@ -177,11 +178,12 @@ class PeriodicTaskWrapperTestCase(TestCase):
     @patch("periodic_instructor_reports.tasks.get_function_from_path")
     def test_task_wrapper_use_custom_folder_prefix(self, mock_get_function, mock_schedules):
         """
-        Test periodic reports will be uploaded to a date-based folder.
+        Test periodic reports will be uploaded to a prefixed hashed course ID folder.
         """
 
         owner = Mock()
         schedule_id = 1
+        hashed_course_id = hashlib.sha1(str(self.course_locator).encode('utf-8')).hexdigest()
 
         mock_report_task = Mock()
         mock_get_function.return_value = mock_report_task
@@ -200,16 +202,17 @@ class PeriodicTaskWrapperTestCase(TestCase):
             "arg2",
             kw1=1,
             kw2=2,
-            upload_parent_dir="{}".format(
-                mock_schedule.upload_folder_prefix,
+            upload_parent_dir="{upload_folder_prefix}{hashed_course_id}".format(
+                upload_folder_prefix=mock_schedule.upload_folder_prefix,
+                hashed_course_id=hashed_course_id,
             ),
         )
 
     @patch("periodic_instructor_reports.tasks.PeriodicReportSchedule")
     @patch("periodic_instructor_reports.tasks.get_function_from_path")
-    def test_task_wrapper_use_custom_folder_prefix(self, mock_get_function, mock_schedules):
+    def test_task_wrapper_use_custom_flat_folder_prefix(self, mock_get_function, mock_schedules):
         """
-        Test periodic reports will be uploaded to a date-based folder.
+        Test periodic reports will be uploaded to a custom parent dir.
         """
 
         owner = Mock()
@@ -219,7 +222,7 @@ class PeriodicTaskWrapperTestCase(TestCase):
         mock_get_function.return_value = mock_report_task
 
         mock_schedule = self.get_mock_schedule(schedule_id, owner)
-        mock_schedule.upload_folder_structure = mock_schedules.STRUCTURE_REGULAR
+        mock_schedule.upload_folder_structure = mock_schedules.STRUCTURE_FLAT
         mock_schedule.upload_folder_prefix = "test/"
 
         mock_schedules.objects.get.return_value = mock_schedule
@@ -232,8 +235,5 @@ class PeriodicTaskWrapperTestCase(TestCase):
             "arg2",
             kw1=1,
             kw2=2,
-            upload_parent_dir="{}".format(
-                mock_schedule.upload_folder_prefix,
-                date.today().strftime("%Y/%m/%d")
-            ),
+            upload_parent_dir=mock_schedule.upload_folder_prefix,
         )

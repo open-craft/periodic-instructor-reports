@@ -52,10 +52,12 @@ class PeriodicReportSchedule(models.Model):
 
     STRUCTURE_REGULAR = "regular"
     STRUCTURE_BY_DATE = "by_date"
+    STRUCTURE_FLAT = "flat"
 
     UPLOAD_FOLDER_STRUCTURES = (
         (STRUCTURE_REGULAR, STRUCTURE_REGULAR),
         (STRUCTURE_BY_DATE, STRUCTURE_BY_DATE),
+        (STRUCTURE_FLAT, STRUCTURE_FLAT),
     )
 
     task = models.ForeignKey("PeriodicReportTask", on_delete=models.CASCADE)
