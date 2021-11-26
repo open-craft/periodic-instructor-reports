@@ -1,5 +1,6 @@
 import hashlib
 from datetime import date
+from typing import Optional
 
 from unittest import TestCase
 from unittest.mock import Mock, patch, call
@@ -41,17 +42,19 @@ class PeriodicTaskWrapperTestCase(TestCase):
     ccx_course_id = "ccx-v1:edX+DemoX+Demo_Course+ccx@1"
     ccx_course_locator = CCXLocator.from_string(ccx_course_id)
 
-    def get_mock_schedule(self, schedule_id: int, owner: object) -> object:
+    def get_mock_schedule(self, schedule_id: int, owner: object, course_ids: Optional[list] = None) -> object:
         """
         Helper function returning a mock schedule object.
         """
+
+        scheduled_course_ids = [self.course_id] if course_ids is None else course_ids
 
         mock_schedule = Mock()
         mock_schedule.id = schedule_id
         mock_schedule.include_ccx = False
         mock_schedule.only_ccx = False
         mock_schedule.owner = owner
-        mock_schedule.course_ids = [self.course_id]
+        mock_schedule.course_ids = scheduled_course_ids
         mock_schedule.arguments = ["arg1", "arg2"]
         mock_schedule.keyword_arguments = {"kw1": 1, "kw2": 2}
         mock_schedule.task.requires_request = False
@@ -72,11 +75,16 @@ class PeriodicTaskWrapperTestCase(TestCase):
         mock_report_task = Mock()
         mock_get_function.return_value = mock_report_task
 
-        mock_schedule = self.get_mock_schedule(schedule_id, owner)
+        mock_schedule = self.get_mock_schedule(schedule_id, owner, course_ids=[
+            self.course_id,
+            "invalid course id"
+        ])
+
         mock_schedules.objects.get.return_value = mock_schedule
 
         periodic_task_wrapper(schedule_id)
 
+        # the task called only once as "invalid course id" results in an exception
         mock_report_task.assert_called_once_with(
             self.course_locator, "arg1", "arg2", kw1=1, kw2=2
         )
