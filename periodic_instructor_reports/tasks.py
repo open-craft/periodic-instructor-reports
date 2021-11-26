@@ -76,10 +76,13 @@ def periodic_task_wrapper(periodic_task_schedule_id: int) -> None:
 
     report_task = get_function_from_path(schedule.task.path)
 
-    target_course_ids = [
-        SlashSeparatedCourseKey.from_string(course_id)
-        for course_id in schedule.course_ids
-    ]
+    target_course_ids = []
+
+    for course_id in schedule.course_ids:
+        try:
+            target_course_ids.append(SlashSeparatedCourseKey.from_string(course_id))
+        except Exception as exc:
+            logger.error("Course not found for course id %s: %s" % (course_id, str(exc)))
 
     if schedule.include_ccx:
         ccx_model = get_ccx_model()
