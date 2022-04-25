@@ -1,4 +1,4 @@
-Django>=2.2,<3
+Django>=2.2
 edx-opaque-keys>=2.2
 # edx-platform still using celery<5
 celery<5.0
